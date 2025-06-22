@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,13 @@ class AuthController extends GetxController {
   Future<void> login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      Get.snackbar('Login Success', 'Welcome back!');
+      Get.snackbar(
+        'Login Success',
+        'Welcome back!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: const Color.fromARGB(255, 255, 255, 255),
+      );
     } catch (e) {
       Get.snackbar(
         'Login Error',
@@ -46,12 +53,20 @@ class AuthController extends GetxController {
         email: email,
         password: password,
       );
-      Get.snackbar('Register Success', 'Account created!');
+      Get.snackbar(
+        'Register Success',
+        'Account created!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: const Color.fromARGB(255, 255, 255, 255),
+      );
     } catch (e) {
       Get.snackbar(
         'Register Error',
         e.toString(),
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: const Color.fromARGB(255, 255, 255, 255),
       );
     }
   }

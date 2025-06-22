@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:grocery_app/controller/controller_state.dart';
@@ -159,17 +160,40 @@ class SigninScreen extends StatelessWidget {
       try {
         await authController.login(email, password);
 
-        // Optional: Navigate to home if login successful
-        if (authController.isLoggedIn) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
           Get.off(() => HomeScreen());
+        } else {
+          Get.snackbar(
+            'Login Failed',
+            'User not authenticated.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: const Color.fromARGB(34, 255, 255, 255),
+          );
         }
-      } catch (e) {
+      } on FirebaseAuthException catch (e) {
+        String message = switch (e.code) {
+          'user-not-found' => 'No user found for that email.',
+          'wrong-password' => 'Incorrect password.',
+          'invalid-email' => 'Email is badly formatted.',
+          _ => e.message ?? 'Login failed',
+        };
+
         Get.snackbar(
-          'Login Failed',
-          e.toString(),
+          'Login Error',
+          message,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red,
-          colorText: Colors.red,
+          colorText: Colors.white,
+        );
+      } catch (e) {
+        Get.snackbar(
+          'Error',
+          'Unexpected: ${e.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
         );
       }
     }
