@@ -150,8 +150,7 @@ class SigninScreen extends StatelessWidget {
     );
   }
 
-  // 🔐 Firebase login handler
-  void _handleSigned(BuildContext context) async {
+  _handleSigned(BuildContext context) async {
     final authController = Get.find<AuthController>();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -163,38 +162,9 @@ class SigninScreen extends StatelessWidget {
         final currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
           Get.off(() => HomeScreen());
-        } else {
-          Get.snackbar(
-            'Login Failed',
-            'User not authenticated.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red,
-            colorText: const Color.fromARGB(34, 255, 255, 255),
-          );
         }
-      } on FirebaseAuthException catch (e) {
-        String message = switch (e.code) {
-          'user-not-found' => 'No user found for that email.',
-          'wrong-password' => 'Incorrect password.',
-          'invalid-email' => 'Email is badly formatted.',
-          _ => e.message ?? 'Login failed',
-        };
-
-        Get.snackbar(
-          'Login Error',
-          message,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
       } catch (e) {
-        Get.snackbar(
-          'Error',
-          'Unexpected: ${e.toString()}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        return null;
       }
     }
   }

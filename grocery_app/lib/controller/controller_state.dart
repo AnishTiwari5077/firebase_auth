@@ -1,26 +1,28 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:flutter/material.dart';
 
 class AuthController extends GetxController {
   final _storage = GetStorage();
-  final _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  final Rxn<User> _firebaseUser = Rxn<User>();
   final RxBool _isFirstTime = true.obs;
-  final Rxn<User> _user = Rxn<User>();
 
+  User? get user => _firebaseUser.value;
   bool get isFirstTime => _isFirstTime.value;
-  bool get isLoggedIn => _user.value != null;
-  User? get user => _user.value;
-
-  get isLoading => null;
 
   @override
   void onInit() {
     super.onInit();
     _isFirstTime.value = _storage.read('isFirstTime') ?? true;
-    _user.bindStream(_auth.authStateChanges());
+    _firebaseUser.bindStream(_auth.authStateChanges());
+  }
+
+  void setFirstTime() {
+    _isFirstTime.value = true;
+    _storage.write('isFirstTime', true);
   }
 
   void setFirstTimeDone() {
@@ -31,18 +33,48 @@ class AuthController extends GetxController {
   Future<void> login(String email, String password) async {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
+
+      setFirstTimeDone();
+      _storage.write('email', email);
+      _storage.write('password', password);
+      _storage.write('isLoggedIn', true);
+
       Get.snackbar(
-        'Login Success',
-        'Welcome back!',
-        snackPosition: SnackPosition.BOTTOM,
+        'Success',
+        'Logged in successfully',
         backgroundColor: Colors.green,
-        colorText: const Color.fromARGB(255, 255, 255, 255),
+        colorText: Colors.white,
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          message = 'Incorrect email or password.';
+          break;
+        case 'invalid-email':
+          message = 'Email format is invalid.';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled.';
+          break;
+        default:
+          message = 'Login failed. Please try again.';
+      }
+
+      Get.snackbar(
+        'Login Error',
+        message,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     } catch (e) {
       Get.snackbar(
-        'Login Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
+        'Error',
+        'Something went wrong. Please try again.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
@@ -54,25 +86,53 @@ class AuthController extends GetxController {
         password: password,
       );
       Get.snackbar(
-        'Register Success',
-        'Account created!',
-        snackPosition: SnackPosition.BOTTOM,
+        'Success',
+        'Account created successfully',
         backgroundColor: Colors.green,
         colorText: const Color.fromARGB(255, 255, 255, 255),
       );
     } catch (e) {
       Get.snackbar(
-        'Register Error',
+        'Registration failed',
         e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,
-        colorText: const Color.fromARGB(255, 255, 255, 255),
+        colorText: Colors.white,
       );
     }
   }
 
   Future<void> logout() async {
     await _auth.signOut();
-    Get.snackbar('Logged Out', 'You have been signed out');
+    Get.snackbar(
+      'Logout',
+      'You have been signed out',
+      backgroundColor: Colors.green,
+      colorText: const Color.fromARGB(255, 255, 255, 255),
+    );
+  }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      Get.snackbar(
+        'Password Reset'
+            'Password reset email sent',
+        'Please check your email',
+        backgroundColor: Colors.green,
+        colorText: const Color.fromARGB(255, 255, 255, 255),
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with this email.';
+          break;
+
+        default:
+          message = 'Password reset failed. Please try again.';
+      }
+
+      Get.snackbar('Password Reset Error', message);
+    }
   }
 }
